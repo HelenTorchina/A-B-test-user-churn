@@ -103,8 +103,11 @@ def main():
     # Запускаем анализ для определения возможных A/B тестов
     processing(df)
 
-    # Генерируем результаты первого теста
-    result_data.create_result()
+    # Определяем параметры и генерируем результаты первого теста
+    n_per_group = 87000  # размер группы
+    base_churn = 0.018  # базовый отток (1.8%)
+    expected_reduction = 0.0018  # минимальное снижение оттока (0.18 п.п.)
+    result_data.create_result(n_per_group, base_churn, expected_reduction)
 
     # Загружаем результат теста для дальнейшего анализа и интерпретации результата
     df_result = pd.read_csv('ab_test_churn_data.csv')
