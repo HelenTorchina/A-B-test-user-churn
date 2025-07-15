@@ -3,7 +3,7 @@ import numpy as np
 
 
 # Генерация результатов А/В теста с сохранением в файл .csv
-def create_result():
+def create_result(n_per_group, base_churn, expected_reduction):
     # Сгенерируем данные для группы A (контроль)
     group_A_churn = np.random.binomial(1, base_churn, n_per_group)
 
