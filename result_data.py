@@ -2,13 +2,8 @@ import pandas as pd
 import numpy as np
 
 
-# Параметры
-
+# Генерация результатов А/В теста с сохранением в файл .csv
 def create_result():
-    n_per_group = 87000  # размер группы
-    base_churn = 0.018  # базовый отток (1.8%)
-    expected_reduction = 0.0018  # минимальное снижение оттока (0.18 п.п.)
-
     # Сгенерируем данные для группы A (контроль)
     group_A_churn = np.random.binomial(1, base_churn, n_per_group)
 
