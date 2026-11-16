@@ -1,54 +1,71 @@
-# A-B-test-user-churn
+# A/B Test: User Churn Analysis
 
-## 🇷🇺 Описание проекта
+## Project Overview
 
-В файле Input_data.csv содержатся следующие данные о прохождении пользователями игры формата match-3:
+The `input_data.csv` file contains data on player progression in a match-3 mobile game featuring a "SawStep" mechanic.
 
-SawStep - шаговые пилы с уровнем, который игрок должен выиграть, чтобы пройти дальше (номер шага указывает порядок отображения уровня у игрока), 
-на каждом шаге пилы игроки проводят хард-валюту - cry_per_user, 
-с каждого шага пилы уходят процент игроков - churn, 
-каждый шаг имеет свою сложность для игрока - LRC (процент поражений от всех стартов на шаге).
+Each SawStep represents a level that a player must complete to progress further in the game. The step number indicates the order in which the level appears in the player's progression.
 
-### Цели проекта:
-1. Проанализировать пилу с точки зрения баланса твердой валюты и оттока
-2. Предложить A/B тест(-ы) с независимой гипотезой для улучшения баланса системы
+The dataset contains the following metrics:
 
-### Этапы проекта:
-1) В файле main_analysis.py происходит анализ исходного набора данных с точки зрения баланса валюты и оттока и предлагаются варианты A/B тестов
+- `SawStep` — step number in the player's progression.
+- `cry_per_user` — average amount of hard currency spent by a player at a given step.
+- `churn` — percentage of players who leave the game at a given step.
+- `LRC` — Level Relative Complexity, measured as the percentage of failed attempts out of all attempts started at that step.
 
-2) С помощью скрипта result_data.py генерируется результат теста - имитируем его проведение
-Нулевая гипотеза: наше изменение (снижение уровня сложности или добавление бустера) не повлияет на отток пользователей
-Альтернативная гипотеза: наше изменение вызовет значимое снижение оттока пользователей на проблемных уровнях
+## Project Goals
 
-4) С помощью скрипта AB_test.py проводим анализ результата теста, основываясь на сгенерированных данных, и делаем краткий вывод
+1. Analyze the balance between hard currency spending and player churn across different steps.
+2. Propose A/B tests based on independent hypotheses to improve the balance of the game economy and reduce churn.
 
-### Что ещё можно сделать?
-Провести А/В тест для тех шагов, где игроки уходят и при этом мало платят, можно попробовать повысить уровень сложности или хотя бы стоимость и посмотреть, как изменится отток / какой выигрыш в стоимости можно получить
+## Project Workflow
 
-## 🇬🇧 Project Description
-The Input_data.csv file contains data on user progression in a match-3 game involving a "SawStep" mechanic:
+### 1. Initial Data Analysis (`main_analysis.py`)
 
-SawStep – levels with a gatekeeping mechanic that the player must beat to progress. Each step number represents the sequence of the player's level experience,
-cry_per_user – amount of hard currency spent by a player on this level,
-churn – percentage of users who abandon the game at this level,
-LRC – level relative complexity, defined as the percentage of failures from all starts on that level
+Analyze the initial dataset to evaluate the relationship between hard currency spending, level complexity, and player churn.
 
-### Project Goals:
-1. Analyze the balance between hard currency spending and user churn at different steps
-2. Propose A/B test(s) with independent hypotheses to improve the system's balance
+The analysis includes:
+- Data type validation and duplicate checks.
+- Outlier detection using boxplots and the IQR method.
+- Identification of steps with unusually high churn.
+- Analysis of the relationship between currency spending, level complexity, and churn.
+- Recommendations for potential A/B tests.
 
-### Project Stages:
-1) Main Analysis – main_analysis.py
-Performs the core analysis of the initial dataset from the perspective of currency vs. churn balance, identifies problem steps, suggests hypotheses for A/B testing
+### 2. A/B Test Simulation (`result_data.py`)
 
-2) Simulated A/B Test – result_data.py
-Simulates the results of an A/B test
-Null Hypothesis (H₀): The proposed change (e.g., lowering level difficulty or adding a booster) does not affect user churn
-Alternative Hypothesis (H₁): The proposed change leads to a statistically significant reduction in churn on the problematic steps
+Generate simulated A/B test data to evaluate a proposed game change.
 
-3) Test Evaluation – AB_test.py
-Analyzes the test results based on the generated data and provides a concise conclusion using statistical methods
+The first test considers reducing level difficulty or introducing a booster on problematic steps.
 
-### What else could be done?
-You can conduct an A/B test for steps where players churn without paying much.
-For these levels, try increasing difficulty or at least the cost per attempt, and observe whether churn increases or remains stable and what kind of gain in currency can be achieved from these changes
+**Hypotheses:**
+
+- **Null hypothesis (H₀):** The proposed change does not affect player churn.
+- **Alternative hypothesis (H₁):** The proposed change leads to a statistically significant reduction in player churn on problematic steps.
+
+The simulation uses a binomial distribution to generate player outcomes for the control and test groups.
+
+### 3. A/B Test Evaluation (`AB_test.py`)
+
+Analyze the generated test data and evaluate whether the proposed change has a statistically significant effect on player churn.
+
+The analysis includes:
+- A contingency table showing churned and retained players in each group.
+- A two-proportion Z-test.
+- 95% confidence intervals for churn rates in both groups.
+- Calculation of the absolute difference in churn rates.
+- A conclusion based on the selected significance level.
+
+## Further Research Opportunities
+
+Additional A/B tests could focus on steps where player churn is relatively high while hard currency spending remains low.
+
+Potential experiments include:
+- Increasing level difficulty.
+- Increasing the cost of attempts.
+- Adjusting the balance between level difficulty and attempt cost.
+
+The goal would be to evaluate how these changes affect player churn and hard currency revenue.
+
+## Important Note
+
+The A/B test results in this project are simulated using generated data. They illustrate the testing methodology and statistical evaluation process and do not represent the results of a real experiment.
