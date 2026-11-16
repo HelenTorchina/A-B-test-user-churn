@@ -1,53 +1,53 @@
 import pandas as pd
-from statsmodels.stats.power import NormalIndPower
-from statsmodels.stats.proportion import proportions_ztest, proportion_confint, proportion_effectsize
+from statsmodels.stats.proportion import proportions_ztest, proportion_confint
 
 
 def AB_test(df_result):
 
-    # Смотрим первые строки и статистику
+    # Display the first rows and basic statistics
     print(df_result.head())
     print(df_result['group'].value_counts())
     print(df_result['churned'].value_counts())
 
-    # Таблица сопряжённости: сколько ушло / осталось в каждой группе
+    # Create a contingency table showing churned and retained players in each group
     contingency_table = pd.crosstab(df_result['group'], df_result['churned'])
     print("\nТаблица сопряжённости:")
     print(contingency_table)
 
-    # Количество ушедших по группам
+    # Number of churned players in each group
     churn_counts = contingency_table[1].values
-    # Всего пользователей по группам
+    # Total number of players in each group
     nobs = contingency_table.sum(axis=1).values
 
-    print(f"Ушло: {churn_counts}")
-    print(f"Всего: {nobs}")
+    print(f"Churned players: {churn_counts}")
+    print(f"Total players: {nobs}")
 
-    # Z-тест
+    # Perform a two-proportion Z-test
     z_stat, p_val = proportions_ztest(count=churn_counts, nobs=nobs, alternative='larger')
-    # 'larger' — потому что мы проверяем, что конверсия в control больше, чем в test (ожидаем уменьшение)
-
-    print(f"\nZ-статистика: {z_stat:.3f}")
+    # 'larger' is used because we test whether the churn rate in the control group
+    # is higher than in the test group (i.e. whether the test reduces churn)
+    
+    print(f"\nZ-statistic: {z_stat:.3f}")
     print(f"P-value: {p_val:.5f}")
 
-    # Доверительные интервалы для долей
+    # Calculate confidence intervals for churn rates
     confint_control = proportion_confint(count=churn_counts[0], nobs=nobs[0], alpha=0.05)
     confint_test = proportion_confint(count=churn_counts[1], nobs=nobs[1], alpha=0.05)
 
     rate_control = churn_counts[0] / nobs[0]
     rate_test = churn_counts[1] / nobs[1]
 
-    print(f'\n Отток (control): {rate_control:.4%}, 95% CI: [{confint_control[0]:.4%}, {confint_control[1]:.4%}]')
-    print(f' Отток (test):    {rate_test:.4%}, 95% CI: [{confint_test[0]:.4%}, {confint_test[1]:.4%}]')
+    print(f'\n Churn rate (control): {rate_control:.4%}, 95% CI: [{confint_control[0]:.4%}, {confint_control[1]:.4%}]')
+    print(f' Churn rate (test):    {rate_test:.4%}, 95% CI: [{confint_test[0]:.4%}, {confint_test[1]:.4%}]')
 
-    # Абсолютный эффект (разница)
+    # Calculate the absolute effect (difference in churn rates)
     diff = rate_control - rate_test
     print(f'\n Абсолютное снижение оттока: {diff:.4%}')
 
-    # Финальный краткий вывод
+    # Print the final conclusion
     alpha = 0.05
     if p_val < alpha:
-        print('\n РЕЗУЛЬТАТ: есть статистически значимое снижение оттока! Нулевая гипотеза отклоняется.')
+        print('\n RESULT: A statistically significant reduction in churn was found. The null hypothesis is rejected.')
     else:
-        print('\n РЕЗУЛЬТАТ: статистически значимого снижения оттока не найдено. Нулевая гипотеза не отклоняется.')
+        print('\n RESULT: No statistically significant reduction in churn was found. The null hypothesis cannot be rejected.')
 
