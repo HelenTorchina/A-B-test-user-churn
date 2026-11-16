@@ -11,7 +11,7 @@ def AB_test(df_result):
 
     # Create a contingency table showing churned and retained players in each group
     contingency_table = pd.crosstab(df_result['group'], df_result['churned'])
-    print("\nТаблица сопряжённости:")
+    print("\nContingency table:")
     print(contingency_table)
 
     # Number of churned players in each group
@@ -42,7 +42,7 @@ def AB_test(df_result):
 
     # Calculate the absolute effect (difference in churn rates)
     diff = rate_control - rate_test
-    print(f'\n Абсолютное снижение оттока: {diff:.4%}')
+    print(f'\n Absolute churn reduction: {diff:.4%}')
 
     # Print the final conclusion
     alpha = 0.05
