@@ -5,11 +5,11 @@ from matplotlib import pyplot as plt
 import result_data
 import AB_test
 
-def analysis():
+def analysis(df):
     df.info()
     display(df)
     
-    # Приведение типов данных
+    # Convert data types
     df['SawStep'] = df['SawStep'].astype('int64')
     df['cry_per_user'] = df['cry_per_user'].astype('float')
     df['LRC'] = df['LRC'].astype('float')
@@ -17,44 +17,45 @@ def analysis():
     df.info()
     print(df.describe())
     
-    # Проверка на дубликаты
+    # Check for duplicate records
     print(df.duplicated().sum())
-    #Дубликатов не обнаружено
+    # No duplicates found
 
-    # Ищем выбросы - они подскажут, есть ли проблемы в балансе твёрдой валюты и оттока
+    # Detect outliers to identify potential imbalances between hard currency spending and player churn
     sns.boxplot(x=df['SawStep'])
     plt.show()
-    # Выбросов нет
+    # No outliers found
     sns.boxplot(x=df['cry_per_user'])
     plt.show()
-    # Выбросов нет
+    # No outliers found
     sns.boxplot(x=df['LRC'])
     plt.show()
-    # Выбросы по уровню сложности - очень маленький уровень сложности
+    # Outliers indicate unusually low level complexity
     Q1 = df['LRC'].quantile(0.25)
     Q3 = df['LRC'].quantile(0.75)
     IQR = Q3 - Q1
     lower_bound = Q1 - 1.5 * IQR
     outliers = df[(df['LRC'] < lower_bound)]
     display(outliers)
-    # Низкий уровень сложности, небольшое количество полученной игровой валюты и небольшой отток - всё логично и не вредит системе
+    # Low level complexity, low hard currency spending, and low churn are consistent with each other and do not pose a risk to the game economy
     sns.boxplot(x=df['churn'])
     plt.show()
-    # Выбросы в большую сторону наблюдаются, на этих шагах высокий отток, выведем информацию о них (в том числе в отдельный файл) и подумаем, 
-    # как можно сократить отток на этих шагах
+    # High churn outliers detected. Inspect these steps, including exporting them to a separate file,
+    # and identify potential ways to reduce churn
     Q1 = df['churn'].quantile(0.25)
     Q3 = df['churn'].quantile(0.75)
     IQR = Q3 - Q1
     upper_bound = Q3 + 1.5 * IQR
     outliers_churn = df[(df['churn'] > upper_bound)]
     display(outliers_churn)
-    # Посмотрим средний отток и уровень сложности на этих шагах, затем сравним со средним оттоком и уровнем сложности по выборке (0,006 и 0,6162)
+    # Compare average churn and level complexity on these steps with the overall dataset averages (0.006 and 0.6162, respectively)
     print(outliers_churn.describe())
-    # На данных шагах отток 0,018 при уровне сложности 0,7529
-    # 1. Здесь могу предложить проверку с помощью A/B теста, уменьшится ли на этих шагах отток при снижении уровня сложности, например, на 0,03 единицы, 
-    # или при введении возможности купить какой-то бустер
+    # Average churn on these steps is 0.018, with an average level complexity of 0.7529
+    # 1. Proposed A/B test: evaluate whether reducing level complexity by approximately 0.03
+    # or introducing an optional booster can reduce churn on these steps
 
-    # 2. Где большие траты, но маленькая сложность? Может быть, стоит поднять сложность
+    # 2. Identify steps with high spending but low level complexity.
+    # Consider increasing difficulty to improve the balance between spending and difficulty
     df['cry_per_user_LRC_relation'] = df['cry_per_user']/df['LRC']
     sns.boxplot(x=df['cry_per_user_LRC_relation'])
     plt.show()
@@ -64,10 +65,12 @@ def analysis():
     upper_bound = Q3 + 1.5 * IQR
     outliers_cry_per_user_LRC_relation = df[(df['cry_per_user_LRC_relation'] > upper_bound)]
     display(outliers_cry_per_user_LRC_relation)
-    # Есть выбросы сверху, но отток здесь в пределах разумного, т.е. высокая стоимость соответствует высокой сложности и это устраивает пользователей, 
-    # нет необходимости проводить дополнительный анализ
+    # Some upper outliers are present, but churn remains within an acceptable range.
+    # Higher costs are associated with higher level complexity, which appears acceptable to players.
+    # No further investigation is required
 
-    # 3. Есть ли шаги, где игроки уходят, но не платят? Возможно, слишком сложно — можно снизить сложность или снизить стоимость попытки.
+    # 3. Identify steps where players churn despite spending relatively little.
+    # These steps may be too difficult; consider reducing difficulty or lowering the cost per attempt
     df['churn_cry_per_user_relation'] = df['churn'] / df['cry_per_user']
     sns.boxplot(x=df['churn_cry_per_user_relation'])
     plt.show()
@@ -77,47 +80,51 @@ def analysis():
     upper_bound = Q3 + 1.5 * IQR
     outliers_churn_cry_per_user_relation = df[(df['churn_cry_per_user_relation'] > upper_bound)]
     display(outliers_churn_cry_per_user_relation.sort_values(by='LRC', ascending=False))
-    # Получили 76 шагов, уберём те, где отток 0,015 и более, т.к. мы уже взяли эту группу в работу на первом шаге, и проанализируем оставшиеся
-    # Также нас не интересуют шаги с небольшим оттоком - 0,006 (это среднее значение оттока по всей выборке) и менее
+    # Identified 76 steps. Exclude those with churn of 0.015 or higher,
+    # as they have already been selected for the first analysis.
+    # Also exclude steps with churn of 0.006 or lower,
+    # as this is the average churn rate across the entire dataset
     outliers_churn_cry_per_user_relation_filtered = outliers_churn_cry_per_user_relation[
         (outliers_churn_cry_per_user_relation['churn'] < 0.015) & (outliers_churn_cry_per_user_relation['churn'] >= 0.006)]
     display(outliers_churn_cry_per_user_relation_filtered.sort_values(by='LRC', ascending=False))
     outliers_churn_cry_per_user_relation_filtered.sort_values(by='LRC', ascending=False).to_csv('output.csv', index=False)
-    # Нашли 55 таких шагов и можем предложить повысить цену либо понизить уровень - можем провести ещё один А/В тест
+    # Identified 55 steps. Consider increasing the cost per attempt or adjusting level difficulty.
+    # Another A/B test could be conducted to evaluate these changes
 
-
-    # 4. Отношение стоимости к количеству ушедших - что оно показывает? Есть ли выбросы и хороши ли они (высокий показатель - отлично, много платят, мало уходят, 
-    # низкий показатель - плохо, ведь мало платят и много уходят
+    # 4. Analyze the ratio of hard currency spending to churn.
+    # A high ratio indicates higher spending relative to churn,
+    # while a low ratio indicates lower spending relative to churn
     df['cry_per_churn'] = df['cry_per_user'] / df['churn']
     sns.boxplot(x=df['cry_per_churn'])
     plt.show()
-    # Уже видим, что выбросы только в большую сторону, значит, здесь нет проблемы и нет смысла в дальнейшем анализе
+   # Only upper outliers are observed, suggesting no apparent issue requiring further analysis
     Q1 = df['cry_per_churn'].quantile(0.25)
     Q3 = df['cry_per_churn'].quantile(0.75)
     IQR = Q3 - Q1
     upper_bound = Q3 + 1.5 * IQR
     outliers_cry_per_churn = df[(df['cry_per_churn'] > upper_bound)]
     outliers_cry_per_churn.sort_values('churn', ascending=False).to_csv('output.csv', index=False)
-    # Проверили размер оттоков здесь и убедились, что эти шаги нам не интересны (отток меньше 0,006)
-
+    # Check churn rates for these steps and confirm that they are not relevant
+    # (churn is below the overall average of 0.006)
 
 def main():
     df = pd.read_csv('input_data.csv', sep=';')
 
-    # Запускаем анализ для определения возможных A/B тестов
+    # Run the analysis to identify potential A/B tests
     analysis(df)
 
-    # Определяем параметры и генерируем результаты первого теста
-    n_per_group = 87000  # размер выборки определён с помощью онлайн калькулятора с уровнем значимости 0,05, статистической мощностью 0,8, 
-    # минимальным эффектом 0,1 и текущим уровнем 0,018 (среднее по нашей проблемной подвыборке)
-    base_churn = 0.018  # базовый отток (1,8%)
-    expected_reduction = 0.0018  # минимальное снижение оттока (10% от 1,8%)
+    # Define test parameters and generate the results of the first experiment
+    n_per_group = 87000  # Sample size was determined using an online calculator with a significance level of 0.05,
+    # statistical power of 0.8, a minimum detectable effect of 0.1,
+    # and a baseline churn rate of 0.018 (the average for the selected problem subset)
+    base_churn = 0.018  # Baseline churn rate (1.8%)
+    expected_reduction = 0.0018  # Expected absolute reduction in churn (0.18 percentage points)
     result_data.create_result(n_per_group, base_churn, expected_reduction)
 
-    # Загружаем результат теста для дальнейшего анализа и интерпретации результата
+    # Load the generated test results for further analysis and interpretation
     df_result = pd.read_csv('ab_test_churn_data.csv')
     
-    # Проводим тест и делаем выводы
+    # Run the statistical test and evaluate the results
     AB_test.AB_test(df_result)
 
 
